@@ -12,13 +12,13 @@ section .data
     GLOBAL g_PromptMessageLength
 
     ScreenWidth          equ 80                ; Default is 80 chars wide
-    PosTerm:             db 27, "[01;01H"      ; <ESC>[<Y>;<X>H
+    PosTerm:             db 27, "[01;01H"      ; <ESC>[<Y>;<X>H => move cursor Y row, X col
     PosTermLength        equ $-PosTerm
-    ClearTerm:           db 27, "[2J"          ; <ESC>[2J
+    ClearTerm:           db 27, "[2J"          ; <ESC>[2J => Clear all window and move cursor to the very left
     ClearTermLength      equ $-ClearTerm
-    AdMessage:           db "Eat, At Joe's!"   ; Ad message
+    AdMessage:           db "Ad Message"   ; Ad message
     AdMessageLength      equ $-AdMessage
-    PromptMessage:       db "Preass Enter: "
+    PromptMessage:       db "Press Enter: "
     PromptMessageLength  equ $-PromptMessage
 
     Digits: db "0001020304050607080910111213141516171819"
@@ -38,7 +38,7 @@ section .bss
 
 section .text
 
-    GLOBAL ClearScreen, GotoXY, WriteString, WriteStringCentered
+    GLOBAL ClearScreen, GotoXY, SysWrite, WriteStringCentered
 
 ;--------------------------------------------------------------------------------
 ; ClearScreen           : Clear the linux console
@@ -59,7 +59,7 @@ ClearScreen:
 
     mov rsi, ClearTerm             ; Pass offset of terminal control string
     mov rdx, ClearTermLength       ; Pass the length of terminal control string
-    call WriteString
+    call SysWrite
 
     pop rdi
     pop rsi
@@ -73,7 +73,7 @@ ClearScreen:
 ;--------------------------------------------------------------------------------
 ; GotoXY                : Position the Linux Console cursor to X, Y coordinates
 ; Updated               : 2024-05-16
-; In                    : X in AH, Y in AL
+; In                    : X ((ScreenWidth-AdMessageLength)/2) in AH, Y in AL
 ; Returns               : Nothing
 ; Modifies              : PosTerm terminal control sequence string
 ; Calls                 : Kernel sys_write
@@ -89,17 +89,18 @@ GotoXY:
     xor rbx, rbx
     xor rcx, rcx
 
-    mov bl, al
-    mov cx, [Digits+rbx*2]         ; 
-    mov [PosTerm+2], cx
+    ; Convert number to ASCII characters in PosTerm
+    mov bl, al                     ; When first call bl = 12, next, bl = 1
+    mov cx, [Digits+rbx*2]         ; Digits[24] = 1, Digits[25] = 2
+    mov [PosTerm+2], cx            ;
 
-    mov bl, ah
+    mov bl, ah                     ; AH has (ScreenWidth-AdMessageLength)/2
     mov cx, [Digits+rbx*2]
     mov [PosTerm+5], cx
 
     mov rsi, PosTerm
     mov rdx, PosTermLength
-    call WriteString
+    call SysWrite
 
     pop rsi
     pop rdx
@@ -112,7 +113,7 @@ GotoXY:
 ;--------------------------------------------------------------------------------
 ; WriteStringCentered   : Send a string centered to an 80 chars wide Linux console
 ; Updated               : 2024-05-16
-; In                    : Y value in AL, String address in RSI, string length in RDX
+; In                    : Y value in AL, AdMessage in RSI, AdMessageLength in RDX
 ; Returns               : Nothing
 ; Modifies              : PosTerm terminal control sequence string
 ; Calls                 : GotoXY, WriteString
@@ -120,20 +121,22 @@ GotoXY:
 
 WriteStringCentered:
     push rbx                      ; Preserve caller's RBX
+
     xor rbx, rbx
+
     mov bl, ScreenWidth
-    sub bl, dl                    ; Get difference between screen width and string width
+    sub bl, dl                    ; Get difference between screen width and AdMessage Length
     shr bl, 1                     ; Divided by 2 for X value
     mov ah, bl                    ; GotoXY requires X in AH
-    call GotoXY                   ; Go to X, Y position in screen
-    call WriteString              ; Print the string
+    call GotoXY                   ; Move cursor to X, Y position in screen
+    call SysWrite                 ; Print the string
 
     pop rbx
 
     ret
 
 ;--------------------------------------------------------------------------------
-; WriteString          : Send a string to the Linux console
+; SysWrite             : Shorthand for sys_write call
 ; Updated              : 2024-05-16
 ; In                   : String address in RSI, string length in RDX
 ; Returns              : Nothing
@@ -141,7 +144,7 @@ WriteStringCentered:
 ; Calls                : Kernel sys_write
 ; Description          :
 
-WriteString:
+SysWrite:
     push rax
     push rdi
 

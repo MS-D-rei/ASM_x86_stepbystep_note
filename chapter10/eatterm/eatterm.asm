@@ -13,7 +13,7 @@ section .bss
 section .text
 
     EXTERN PosTerm, ClearTerm, AdMessage, PromptMessage
-    EXTERN ClearScreen, GotoXY, WriteString, WriteStringCentered
+    EXTERN ClearScreen, GotoXY, SysWrite, WriteStringCentered
     EXTERN g_AdMessageLength, g_PromptMessageLength
 
 ;--------------------------------------------------------------------------------
@@ -21,8 +21,8 @@ section .text
 global _start
 
 _start:
-    push rbp                 ; Prolog
-    mov rbp, rsp             ; For debugging
+    push rbp                     ; Prolog
+    mov rbp, rsp                 ; For debugging
 
     call ClearScreen
 
@@ -34,17 +34,17 @@ _start:
     call WriteStringCentered
 
     ; Position the cursor for the "Press Enter" prompt
-    mov rax, 0117h           ; X, Y = 1, 23 as a single hex value
+    mov rax, 0117h               ; X, Y = 1, 23 as a single hex value
     call GotoXY
 
     ; Display "Press Enter" prompt
     mov rsi, PromptMessage
     mov rdx, g_PromptMessageLength
-    call WriteString
+    call SysWrite 
 
     ; Wait for the user to press Enter
-    mov rax, 0               ; sys_read
-    mov rdi, 0               ; File Descriptor 0 = stdin
+    mov rax, 0                   ; sys_read
+    mov rdi, 0                   ; File Descriptor 0 = stdin
     syscall
 
 Exit:

@@ -26,12 +26,12 @@ section .data
 ; Table of byte-length numbers 
     Dataset    db 9,17,71,52,55,18,29,36,18,68,77,63,58,44,0
     Message    db "Data current as of 2024/05/21"
-    MessageLength   equ-$Message
+    MessageLength   equ $-Message
 
 ; Escape sequence will clear the console terminal and place
 ; the text cursor to the origin(1,1) on virtually all Linux.
     ClearHome    db 27,"[2J",27,"[01;01H"
-    ClearHomeLength  equ-$ClearHome
+    ClearHomeLength  equ $-ClearHome
 
 section .bss
 

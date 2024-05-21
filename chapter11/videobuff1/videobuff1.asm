@@ -12,8 +12,8 @@
 
 section .data
 
-    EOL                    equ 10
-    ASCIISpaceChar         equ 32
+    EOL                    equ 0x0A
+    ASCIISpaceChar         equ 0x20
     HBarCharLength         equ 196
     StartRowLength         equ 2
 
@@ -89,6 +89,7 @@ ShowBuffer:
     mov rdi, 1
     mov rsi, VideoBuff
     mov rdx, Cols*Rows
+    syscall
 
     pop rdi
     pop rsi
@@ -219,7 +220,7 @@ WriteHB:
 ; In
     ; X position (row #) in RBX
     ; Y position (col #) in RAX
-    ; The length of the ruler in chars in RCX
+    ; The length of the ruler in chars in RCX. 80.
 ; Returns                     : Nothing
 ; Modifies                    : VideoBuff
 ; Calls                       : Nothing
@@ -247,9 +248,9 @@ Ruler:
 
 DoRule:
     mov al, [rdx]
-    stosb                    ; Store 1 char. Note that there is no `rep`.
+    stosb                    ; RDI[0] = AL. And point to RDI[1]
     inc rdx                  ; Increment RDX to point to next char in RulerString.
-    loop DoRule
+    loop DoRule              ; RCX-1 and then check ZF. If ZF is 1, stop.
 
     pop rdi
     pop rdx
@@ -270,41 +271,41 @@ _start:
     call ClearTerminal
     call ClearVideoBuffer
 
-    mov rax, 1               ; Load Y position to AL.
-    mov rbx, 1               ; Load X position to BL.
-    mov rcx, Cols-1          ; Load ruler length to RCX.
-    call Ruler               ; Write the ruler to the buffer.
-
-    mov rsi, Message
-    mov rcx, MessageLength
-    mov rbx, Cols
-    sub rbx, rcx             ; Calculate the diff of MessageLength and screen width.
-    shr rbx, 1               ; the diff / 2 for X value
-    mov rax, 20              ; Set message row to Line 24
-    call WriteLn             ; Display the centered message
-
-    mov rsi, Dataset
-    mov rbx, 1
-    mov r15, 0               ; Dataset element index starts at 0
-
-.blast:
-    mov rax, r15
-    add rax, StartRowLength
-    mov cl, byte [rsi+r15]   ; Put Dataset value to cl
-    cmp rcx, 0
-    je .rule2
-    call WriteHB
-    inc r15
-    jmp .blast
-
-; Display the bottom ruler
-.rule2:
-    mov rax, r15
-    add rax, StartRowLength
-    mov rbx, 1
-    mov rcx, Cols-1
-    call Ruler
-
+;    mov rax, 1               ; Load Y position to AL.
+;    mov rbx, 1               ; Load X position to BL.
+;    mov rcx, Cols-1          ; Load ruler length to RCX.
+;    call Ruler               ; Write the ruler to the buffer.
+;
+;    mov rsi, Message
+;    mov rcx, MessageLength
+;    mov rbx, Cols
+;    sub rbx, rcx             ; Calculate the diff of MessageLength and screen width.
+;    shr rbx, 1               ; the diff / 2 for X value
+;    mov rax, 20              ; Set message row to Line 24
+;    call WriteLn             ; Display the centered message
+;
+;    mov rsi, Dataset
+;    mov rbx, 1
+;    mov r15, 0               ; Dataset element index starts at 0
+;
+;.blast:
+;    mov rax, r15
+;    add rax, StartRowLength
+;    mov cl, byte [rsi+r15]   ; Put Dataset value to cl
+;    cmp rcx, 0
+;    je .rule2
+;    call WriteHB
+;    inc r15
+;    jmp .blast
+;
+;; Display the bottom ruler
+;.rule2:
+;    mov rax, r15
+;    add rax, StartRowLength
+;    mov rbx, 1
+;    mov rcx, Cols-1
+;    call Ruler
+;
     call ShowBuffer
 
 Exit:

@@ -130,10 +130,10 @@ ClearVideoBuffer:
     dec rdi                          ; VideoBuff[-1]
     mov rcx, Rows                    ; Loop count
 
-.PtEOL:
+.PutEOL:
     add rdi, Cols                    ; VideoBuff[80], Videobuff[161]...
     mov byte [rdi], EOL              ; Put EOL at the end of line
-    loop .PtEOL                      ; Loop. decrement RCX and check Zero Flag.
+    loop .PutEOL                      ; Loop. decrement RCX and check Zero Flag.
     
     pop rdi
     pop rcx

@@ -233,22 +233,28 @@ Ruler:
     push rdx
     push rdi
 
-    mov rdi, VideoBuff
+    mov rdi, VideoBuff        ; RDI = VideoBuff[0]
+    ; Adjust X(RBX), Y(RAX) value to be 0-based.
     dec rax
     dec rbx
+    ; Calculate index to show Y position.
     mov ah, Cols
-    mul ah
-    add rdi, rax
-    add rdi, rbx
+    mul ah                    ; AL(Y value) * AH(one line length) = AX (index for Y position).
+    add rdi, rax              ; RDI[0+RAX(index for Y position)]
+    add rdi, rbx              ; RDI[0+RAX+RBX(index for X position)]
 
-; RDI now contains the memory address in the buffer where the ruler
-; is to begin. Now we display the ruler, starting at the position
+    ; RDI now contains the memory address in the buffer where the ruler
+    ; is to begin.
 
     mov rdx, RulerString
 
 DoRule:
+    ; This is tight loop for
+    ; RDI[0+RAX+RBX] = RDX[0],
+    ; RDI[1+RAX+RBX] = RDX[1]...
+    ; RDI[80+RAX+RBX] = RDX[80]
     mov al, [rdx]
-    stosb                    ; RDI[0] = AL. And point to RDI[1]
+    stosb                    ; RDI[0+RAX+RBX] = AL. And point to RDI[1+RAX+RBX]
     inc rdx                  ; Increment RDX to point to next char in RulerString.
     loop DoRule              ; RCX-1 and then check ZF. If ZF is 1, stop.
 
@@ -271,41 +277,41 @@ _start:
     call ClearTerminal
     call ClearVideoBuffer
 
-;    mov rax, 1               ; Load Y position to AL.
-;    mov rbx, 1               ; Load X position to BL.
-;    mov rcx, Cols-1          ; Load ruler length to RCX.
-;    call Ruler               ; Write the ruler to the buffer.
+    mov rax, 1               ; Load Y position to AL.
+    mov rbx, 1               ; Load X position to BL.
+    mov rcx, Cols-1          ; Load ruler length to RCX.
+    call Ruler               ; Write the ruler to the buffer.
+
+;     mov rsi, Message
+;     mov rcx, MessageLength
+;     mov rbx, Cols
+;     sub rbx, rcx             ; Calculate the diff of MessageLength and screen width.
+;     shr rbx, 1               ; the diff / 2 for X value
+;     mov rax, 20              ; Set message row to Line 24
+;     call WriteLn             ; Display the centered message
 ;
-;    mov rsi, Message
-;    mov rcx, MessageLength
-;    mov rbx, Cols
-;    sub rbx, rcx             ; Calculate the diff of MessageLength and screen width.
-;    shr rbx, 1               ; the diff / 2 for X value
-;    mov rax, 20              ; Set message row to Line 24
-;    call WriteLn             ; Display the centered message
+;     mov rsi, Dataset
+;     mov rbx, 1
+;     mov r15, 0               ; Dataset element index starts at 0
 ;
-;    mov rsi, Dataset
-;    mov rbx, 1
-;    mov r15, 0               ; Dataset element index starts at 0
+; .blast:
+;     mov rax, r15
+;     add rax, StartRowLength
+;     mov cl, byte [rsi+r15]   ; Put Dataset value to cl
+;     cmp rcx, 0
+;     je .rule2
+;     call WriteHB
+;     inc r15
+;     jmp .blast
 ;
-;.blast:
-;    mov rax, r15
-;    add rax, StartRowLength
-;    mov cl, byte [rsi+r15]   ; Put Dataset value to cl
-;    cmp rcx, 0
-;    je .rule2
-;    call WriteHB
-;    inc r15
-;    jmp .blast
-;
-;; Display the bottom ruler
-;.rule2:
-;    mov rax, r15
-;    add rax, StartRowLength
-;    mov rbx, 1
-;    mov rcx, Cols-1
-;    call Ruler
-;
+; ; Display the bottom ruler
+; .rule2:
+;     mov rax, r15
+;     add rax, StartRowLength
+;     mov rbx, 1
+;     mov rcx, Cols-1
+;     call Ruler
+
     call ShowBuffer
 
 Exit:

@@ -160,16 +160,26 @@ WriteLn:
     push rbx
     push rcx
     push rdi
-    cld
+    cld                       ; Clear Direction Flag.
 
     mov rdi, VideoBuff
+    ; Adjust X, Y values to 0-based to calculate each offset.
     dec rax
     dec rbx
+    ; Calculate Y position offset.
     mov ah, Cols
-    mul ah                    ; AX = AL * AH
-    add rdi, rax              ; Add X offset to VideoBuff
-    add rdi, rbx              ; Add Y offset to VideoBuff
-    rep movsb                 ; Blast the string into the buffer
+    mul ah                    ; AX(Y position offset) = AL(Y value) * AH (line length).
+    ; Add offsets to calculate where the loop begins.
+    add rdi, rax              ; Add Y offset to VideoBuff.
+    add rdi, rbx              ; Add X offset to VideoBuff.
+    rep movsb                 ; Loop as below.
+    ; while (RCX >= 0)
+    ; {
+    ;	RDI[rdiIndex + RAX + RBX] = RSI[rsiIndex];
+    ;	--RCX;
+    ;	++rdiIndex;
+    ;	++rsiIndex;
+    ; }
 
     pop rdi
     pop rcx
@@ -282,14 +292,14 @@ _start:
     mov rcx, Cols-1          ; Load ruler length to RCX.
     call Ruler               ; Write the ruler to the buffer.
 
-;     mov rsi, Message
-;     mov rcx, MessageLength
-;     mov rbx, Cols
-;     sub rbx, rcx             ; Calculate the diff of MessageLength and screen width.
-;     shr rbx, 1               ; the diff / 2 for X value
-;     mov rax, 20              ; Set message row to Line 24
-;     call WriteLn             ; Display the centered message
-;
+    mov rsi, Message
+    mov rcx, MessageLength
+    mov rbx, Cols
+    sub rbx, rcx             ; Calculate the diff of MessageLength and screen width.
+    shr rbx, 1               ; the diff / 2 for X value.
+    mov rax, 20              ; Set message row to Line 20.
+    call WriteLn             ; Display Message at center of line 20.
+
 ;     mov rsi, Dataset
 ;     mov rbx, 1
 ;     mov r15, 0               ; Dataset element index starts at 0

@@ -12,10 +12,10 @@
 
 section .data
 
-    EOL                    equ 0x0A
-    ASCIISpaceChar         equ 0x20
-    HBarCharLength         equ 196
-    StartRowLength         equ 2
+    EOL                    equ 0x0A      ; "\n"
+    ASCIISpaceChar         equ 0x20      ; " "
+    HyphenChar             equ 0x2D      ; "-"
+    StartRow               equ 2
 
 ; To display a ruler across the screen.
     TenDigits    db 31,32,33,34,35,36,37,38,39,30
@@ -189,18 +189,18 @@ WriteLn:
     ret
 
 ;--------------------------------------------------------------------------------
-; WriteHB                     : Generate a horizontal line bar at X,Y
+; WriteHorizontalBar          : Generate a horizontal line bar at X,Y
 ; Updated                     : 2024-05-21
 ; In
     ; X position (row #) in RBX
     ; Y position (col #) in RAX
-    ; The length of the bar in chars in RCX
+    ; Counts from Dataset for stosb loop in RCX
 ; Returns                     : Nothing
 ; Modifies                    : VideoBuff, DF
 ; Calls                       : Nothing
 ; Description
 
-WriteHB:
+WriteHorizontalBar:
     push rax
     push rbx
     push rcx
@@ -208,14 +208,23 @@ WriteHB:
     cld
 
     mov rdi, VideoBuff
-    dec rax                   ; Adjust Y down by 1 for address calculation
-    dec rbx                   ; Adjust X down by 1 for address calculation
+    ; Adjust X, Y values to 0-based to calculate each offset.
+    dec rax
+    dec rbx
+    ; Calculate Y position offset.
     mov ah, Cols              ; Screen width
-    mul ah                    ; AX = AL * AH
-    add rdi, rax              ; Add Y offset
-    add rdi, rbx              ; Add X offset
-    mov al, HBarCharLength
-    rep stosb                 ; Blast the bar char into the buffer
+    mul ah                    ; AX(Y position offset) = AL(Y value) * AH (line length).
+    ; Add offsets to calculate where the loop begins.
+    add rdi, rax              ; RDI[0+RAX(Y position offset)]
+    add rdi, rbx              ; RDI[0+RAX+RBX(X position offset)]
+    mov al, HyphenChar
+    rep stosb                 ; Loop to add HyphenChar to VideoBuff
+    ; while (rcx >= 0)
+    ; {
+    ;	rdi[rdiIndex+rbx+rax] = HyphenChar;
+    ;   ++rdiIndex;
+    ;   --rcx;
+    ; }
 
     pop rdi
     pop rcx
@@ -300,22 +309,22 @@ _start:
     mov rax, 20              ; Set message row to Line 20.
     call WriteLn             ; Display Message at center of line 20.
 
-;     mov rsi, Dataset
-;     mov rbx, 1
-;     mov r15, 0               ; Dataset element index starts at 0
-;
-; .blast:
-;     mov rax, r15
-;     add rax, StartRowLength
-;     mov cl, byte [rsi+r15]   ; Put Dataset value to cl
-;     cmp rcx, 0
-;     je .rule2
-;     call WriteHB
-;     inc r15
-;     jmp .blast
-;
-; ; Display the bottom ruler
-; .rule2:
+    mov rsi, Dataset
+    mov rbx, 1               ; Initial X position.
+    mov r15, 0               ; Dataset element index starts at 0.
+
+.blast:
+    mov rax, r15             ; To print "-" line by line
+    add rax, StartRow        ; To start at line 2.
+    mov cl, byte [rsi+r15]   ; Put Dataset value to cl.
+    cmp rcx, 0               ; If the value is 0 (reach the last value in Dataset).
+    je .rule2
+    call WriteHorizontalBar
+    inc r15                  ; Point to the next value of Dataset and next line.
+    jmp .blast
+
+; Display the bottom ruler
+.rule2:
 ;     mov rax, r15
 ;     add rax, StartRowLength
 ;     mov rbx, 1

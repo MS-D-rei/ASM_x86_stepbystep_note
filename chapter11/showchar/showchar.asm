@@ -157,19 +157,19 @@ _start:
 
 	mov rdi, VideoBuffer
 	add rdi, ColsWidth*ChartStartRow     ; Add Y position offset for where to begin.
-	mov rcx, 224			     ; Counts for loop.
-	mov al, 32                           ; Start from ASCII space char(32)
+	mov rcx, 224			     ; Total loop count.
+	mov al, 32                           ; Start from ASCII space char(32).
 
-	.DoLn:
-	mov bl, ChartLength
-	.DoChar:
+	.ChartLine:
+	mov bl, ChartLength                  ; Loop count for one chart line.
+	.BumpChar:
 	stosb
-	jrcxz AllDone
-	inc al
-	dec bl
-	loopnz .DoChar
-	add rdi, ColsWidth-ChartLength
-	jmp .DoLn
+	jrcxz AllDone                        ; Exit loop if total loop count is zero.
+	inc al                               ; Next ASCII char.
+	dec bl				     ; dec from ChartLength(32) to 0.
+	loopnz .BumpChar                     ; If bl != 0.
+	add rdi, ColsWidth-ChartLength       ; Offset to go over EOL and go to next line.
+	jmp .ChartLine
 
 AllDone:
 

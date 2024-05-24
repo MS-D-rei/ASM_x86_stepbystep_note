@@ -325,11 +325,11 @@ _start:
 
 ; Display the bottom ruler
 .rule2:
-;     mov rax, r15
-;     add rax, StartRowLength
-;     mov rbx, 1
-;     mov rcx, Cols-1
-;     call Ruler
+    mov rax, r15             ; Now r15 has the end index of Dataset.
+    add rax, StartRow        ; Y position offset = the end of hyphen line + 2. Will be -1 in Ruler label.
+    mov rbx, 1               ; X position offset. Will be -1 in Ruler label.
+    mov rcx, Cols-1          ; Counter. 80.
+    call Ruler
 
     call ShowBuffer
 

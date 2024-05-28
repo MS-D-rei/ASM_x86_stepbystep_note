@@ -1,4 +1,4 @@
-; Executable name         ; hello-world-glibc
+; Executable name         ; puts-hello
 ; Version
 ; Created date
 ; Last update
@@ -6,8 +6,8 @@
 ; Description
 
 ; How to build
-; 	nasm -f elf64 -g -F dwarf hello-world-glibc.asm
-;	gcc -o hello-world-glibc -no-pie hello-world-glibc.o
+; 	nasm -f elf64 -g -F dwarf puts-hello.asm
+;	gcc -o puts-hello -no-pie puts-hello.o
 ;	`-no-pie` option is required to use `puts`
 ;	`pie` stands for Position-Independent Executable
 

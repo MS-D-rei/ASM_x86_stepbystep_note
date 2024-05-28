@@ -17,11 +17,12 @@ section .text
 	global _start
 
 _start:
-	push rbp
+	push rbp                     ; Alignment prolog
 	mov rbp, rsp                 ; RBP = the address of top of the stack.
 	and rsp, -16                 ; -16 = ... 1111 | 1111 | 1111 | 0000.
 	                             ; Get rid of the least 4 bits.
 	
+	; Because push rbp for alignment prolog, [rbp+8] has the args count, not [rbp]
 	mov r13, [rbp+8]             ; r13 = the args count from the stack.
 	cmp qword r13, MaxArgs       ; If the args count.
 	ja Error                     ; Above MaxArgs.
@@ -31,7 +32,7 @@ _start:
 Scan1:
 	xor rax, rax                 ; RAX = 0 for repne scasb.
 	mov rcx, 0x0ffff             ; Max repeat count.
-	mov rdi, [rbp+8+rbx*8]       ; RDI = the address of the string to scan.
+	mov rdi, qword [rbp+8+rbx*8] ; RDI = the address of the string to scan.
 	mov rdx, rdi                 ; Copy to RDX.
 
 	cld
@@ -50,6 +51,7 @@ Scan1:
 	sub rdi, rdx                 ; This is for calculating the length like equ rdi-rdx.
 	mov [ArgLength+rbx*8], rdi   ; Copy the length to ArgLength.
 
+	; Loop from RBX(1) to MaxArgs
 	inc rbx
 	cmp rbx, r13                 ; If the stack address offset reaches MaxArgs.
 	jbe Scan1                    ; If not, loop Scan1.
@@ -59,10 +61,11 @@ Scan1:
 ShowArgs:
 	mov rax, 1                   ; sys_write
 	mov rdi, 1                   ; File descriptor 1, stdout
-	mov rsi, [rbp+8+rbx*8]
-	mov rdx, [ArgLength+rbx*8]
+	mov rsi, qword [rbp+8+rbx*8]      ; The address of the string of the arg.
+	mov rdx, qword [ArgLength+rbx*8]  ; The length of the string of the arg.
 	syscall
 
+	; Loop from RBX(1) to MaxArgs.
 	inc rbx
 	cmp rbx, r13
 	jbe ShowArgs
@@ -76,7 +79,7 @@ Error:
 	syscall
 
 Exit:
-	mov rsp, rbp
+	mov rsp, rbp                 ; Epilog
 	pop rbp
 
 	mov rax, 60

@@ -60,8 +60,8 @@ main:
 	call localtime               ; Create tm structure with RDI and return the pointer to it in RAX.
 
 	; Create a copyt of the tm structure.
-	mov rsi, rax                 ; RSI = the pointer to the tm structure.
 	mov rdi, TmCopy              ; RDI = the copy destination.
+	mov rsi, rax                 ; RSI = the pointer to the tm structure.
 	mov rcx, 9                   ; RCX = counts for rep movsd.
 	cld
 	rep movsd                    ; Copy the tm structure to TmCopy.
